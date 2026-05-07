@@ -1,12 +1,18 @@
 # Training a Quadruped from Scratch · Isaac Lab Notes
 
+### 🔗 [**Read the post live → zaniyar.github.io/robotic**](https://zaniyar.github.io/robotic/)
+
+[![live](https://img.shields.io/badge/▶_live_blog-zaniyar.github.io%2Frobotic-7ad7ff?style=for-the-badge&logo=github)](https://zaniyar.github.io/robotic/)
+
+---
+
 Field notes from training a custom 12-DoF quadruped (ZHAW Wild V1) end to end
 in Isaac Lab. URDF design, export pitfalls, env configs, PPO, kick-test for
 robustness. Companion code and assets bundled next to the post.
 
-> **Read the post**: open [`index.html`](index.html) in a browser served
-> over `http://`. Browsers block `file://` fetches that the embedded 3D
-> viewer relies on.
+> **Prefer to read offline?** Open [`index.html`](index.html) over `http://`
+> (e.g. via the `python -m http.server` command below). Browsers block
+> `file://` fetches that the embedded 3D viewer relies on.
 
 ## Run locally
 
