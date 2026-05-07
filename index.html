@@ -682,6 +682,58 @@ IsaacLab\source\isaaclab_tasks\...\velocity\config\zhawild\flat_env_cfg.py</pre>
       </table>
     </div>
 
+    <h3>A second example from this run · the bunny hop <span class="tag">recording · 9 s</span></h3>
+    <figure style="margin:14px 0">
+      <video controls preload="metadata" playsinline muted loop autoplay
+             style="width:100%;border:1px solid var(--accent-2);border-radius:2px;background:#000;display:block;box-shadow:0 0 24px rgba(255,216,107,.12)">
+        <source src="quadruped_zhawild_v1/zhawild_hopping.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+      <figcaption style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:8px;letter-spacing:.04em">
+        ZHAW Wild · earlier checkpoint of the same run. The robot moves forward, but it bounces. All four legs leave
+        the ground in sync and land in sync. Net forward motion happens, the velocity reward is collected, no body
+        contact occurs. The policy has discovered hopping, not walking.
+      </figcaption>
+    </figure>
+
+    <h3>Why it hops &amp; what would fix it</h3>
+    <p>
+      The bunny-hop is the exact same kind of reward exploit as the crawl, just one rung higher. The policy
+      satisfies every term we wrote without any of the things that make a gait <i>look</i> right.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Why it works for PPO</th><th>What it tells us is missing</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><b>Velocity reward only checks the base.</b> Hopping forward at 0.5 m/s scores the same as walking forward at 0.5 m/s.</td>
+            <td>Add a <b>foot-contact-time</b> term that rewards <i>at least N feet on the ground at any time</i>. Hopping has 0 ground contacts mid-flight.</td>
+          </tr>
+          <tr>
+            <td><b>Gait reward checks alternation</b> per pair. Synchronised four-foot lift-off looks like alternation just with phase 0 between pairs.</td>
+            <td>Penalise <b>contact-pattern symmetry across diagonals</b>. A trot has fl+rr down while fr+rl swing. A hop has all four matched.</td>
+          </tr>
+          <tr>
+            <td><b>Vertical-velocity penalty <code>lin_vel_z_l2</code> exists</b> but the weight is small (-2.0 against a +1.0 forward reward). At training time it gets paid like a tax.</td>
+            <td>Bump <b>vertical-velocity penalty</b>, or add a <b>base-height tracking term</b> (target ~0.55 m, hard-clip the deviation).</td>
+          </tr>
+          <tr>
+            <td><b>Action-rate penalty is per-step.</b> Hopping uses one big synchronised extension followed by relaxation. Few action transitions per second.</td>
+            <td>Add an <b>air-time-per-foot</b> term that rewards individual feet being in the air briefly, not all four at once.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      In short: the policy has no incentive to <i>stagger</i> the legs. Every reward we wrote is satisfiable by a
+      perfectly in-phase bounce. Adding a single <b>"never less than two feet on the ground"</b> contact constraint,
+      either as a hard penalty or a contact-schedule reward, breaks the hop and forces a real trot. NVIDIA's Anymal
+      and Spot configs do this with a <code>feet_air_time</code> term tuned per-foot and a <code>flat_orientation_l2</code>
+      term that punishes the pitch wobble that a hop produces on landing.
+    </p>
+
     <div class="callout good">
       <b>Rule of thumb.</b> A reward term should fail loudly when the behaviour you want is absent. If a crawling robot
       can satisfy your gait reward, your gait reward is broken. Cross-check every term against a degenerate behaviour
