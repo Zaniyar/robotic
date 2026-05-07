@@ -1,0 +1,523 @@
+<?xml version="1.0"?>
+<robot name="zhawild_v1_0" xmlns:texttocad="https://tom-cad.dev/ns/texttocad-urdf/1">
+  <material name="alu_natural"><color rgba="0.78 0.78 0.76 1"/></material>
+  <material name="carbon_black"><color rgba="0.08 0.08 0.08 1"/></material>
+  <material name="actuator_dark"><color rgba="0.14 0.16 0.18 1"/></material>
+  <material name="rubber_black"><color rgba="0.04 0.04 0.04 1"/></material>
+  <material name="brand_black"><color rgba="0.005 0.005 0.005 1"/></material>
+  <material name="sensor_grey"><color rgba="0.55 0.57 0.58 1"/></material>
+  <material name="debug_clevis_magenta"><color rgba="0.95 0.10 0.85 1"/></material>
+  <material name="debug_shank_blue"><color rgba="0.05 0.25 1.00 1"/></material>
+  <material name="debug_ankle_orange"><color rgba="1.00 0.45 0.02 1"/></material>
+  <material name="debug_spring_yellow"><color rgba="1.00 0.92 0.05 1"/></material>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0.52 0" rpy="0 0 0"/>
+      <mass value="17.5"/>
+      <inertia ixx="0.128479" ixy="0" ixz="0" iyy="0.707292" iyz="0" izz="0.653479"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0.52 0" rpy="0 0 0"/>
+      <geometry><mesh filename="quadruped2_torso.stl"/></geometry>
+      <material name="alu_natural"/>
+    </visual>
+    <visual>
+      <origin xyz="0 0.545 0.128" rpy="0 0 0"/>
+      <geometry><mesh filename="quadruped2_label.stl"/></geometry>
+      <material name="brand_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0.52 0" rpy="0 0 0"/>
+      <geometry><box size="0.65 0.16 0.25"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fl_hip_link">
+    <inertial>
+      <origin xyz="0 -0.036 0" rpy="0 0 0"/>
+      <mass value="0.8"/>
+      <inertia ixx="0.00158747" ixy="0" ixz="0" iyy="0.0009216" iyz="0" izz="0.00158747"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_hip.stl"/></geometry>
+      <material name="actuator_dark"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.036 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.13"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fl_thigh_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1.6"/>
+      <inertia ixx="0.0154416" ixy="0" ixz="0" iyy="0.0018432" iyz="0" izz="0.0154416"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_thigh.stl"/></geometry>
+      <material name="carbon_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fl_shank_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.009156" ixy="0" ixz="0" iyy="0.000162" iyz="0" izz="0.009156"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_clevis.stl"/></geometry>
+      <material name="debug_clevis_magenta"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_tube.stl"/></geometry>
+      <material name="debug_shank_blue"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_ankle_cube.stl"/></geometry>
+      <material name="debug_ankle_orange"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_spring_stub.stl"/></geometry>
+      <material name="debug_spring_yellow"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.024" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fl_foot_link">
+    <inertial>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <mass value="0.18"/>
+      <inertia ixx="5.6448e-05" ixy="0" ixz="0" iyy="5.6448e-05" iyz="0" izz="5.6448e-05"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_foot.stl"/></geometry>
+      <material name="rubber_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.028"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fr_hip_link">
+    <inertial>
+      <origin xyz="0 -0.036 0" rpy="0 0 0"/>
+      <mass value="0.8"/>
+      <inertia ixx="0.00158747" ixy="0" ixz="0" iyy="0.0009216" iyz="0" izz="0.00158747"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_hip.stl"/></geometry>
+      <material name="actuator_dark"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.036 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.13"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fr_thigh_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1.6"/>
+      <inertia ixx="0.0154416" ixy="0" ixz="0" iyy="0.0018432" iyz="0" izz="0.0154416"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_thigh.stl"/></geometry>
+      <material name="carbon_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fr_shank_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.009156" ixy="0" ixz="0" iyy="0.000162" iyz="0" izz="0.009156"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_clevis.stl"/></geometry>
+      <material name="debug_clevis_magenta"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_tube.stl"/></geometry>
+      <material name="debug_shank_blue"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_ankle_cube.stl"/></geometry>
+      <material name="debug_ankle_orange"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_spring_stub.stl"/></geometry>
+      <material name="debug_spring_yellow"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.024" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="fr_foot_link">
+    <inertial>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <mass value="0.18"/>
+      <inertia ixx="5.6448e-05" ixy="0" ixz="0" iyy="5.6448e-05" iyz="0" izz="5.6448e-05"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_foot.stl"/></geometry>
+      <material name="rubber_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.028"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rl_hip_link">
+    <inertial>
+      <origin xyz="0 -0.036 0" rpy="0 0 0"/>
+      <mass value="0.8"/>
+      <inertia ixx="0.00158747" ixy="0" ixz="0" iyy="0.0009216" iyz="0" izz="0.00158747"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_hip.stl"/></geometry>
+      <material name="actuator_dark"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.036 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.13"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rl_thigh_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1.6"/>
+      <inertia ixx="0.0154416" ixy="0" ixz="0" iyy="0.0018432" iyz="0" izz="0.0154416"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_thigh.stl"/></geometry>
+      <material name="carbon_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rl_shank_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.009156" ixy="0" ixz="0" iyy="0.000162" iyz="0" izz="0.009156"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_clevis.stl"/></geometry>
+      <material name="debug_clevis_magenta"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_tube.stl"/></geometry>
+      <material name="debug_shank_blue"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_ankle_cube.stl"/></geometry>
+      <material name="debug_ankle_orange"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_spring_stub.stl"/></geometry>
+      <material name="debug_spring_yellow"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.024" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rl_foot_link">
+    <inertial>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <mass value="0.18"/>
+      <inertia ixx="5.6448e-05" ixy="0" ixz="0" iyy="5.6448e-05" iyz="0" izz="5.6448e-05"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_foot.stl"/></geometry>
+      <material name="rubber_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.028"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rr_hip_link">
+    <inertial>
+      <origin xyz="0 -0.036 0" rpy="0 0 0"/>
+      <mass value="0.8"/>
+      <inertia ixx="0.00158747" ixy="0" ixz="0" iyy="0.0009216" iyz="0" izz="0.00158747"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_hip.stl"/></geometry>
+      <material name="actuator_dark"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.036 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.13"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rr_thigh_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1.6"/>
+      <inertia ixx="0.0154416" ixy="0" ixz="0" iyy="0.0018432" iyz="0" izz="0.0154416"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_thigh.stl"/></geometry>
+      <material name="carbon_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.054" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rr_shank_link">
+    <inertial>
+      <origin xyz="0 -0.165 0" rpy="0 0 0"/>
+      <mass value="1"/>
+      <inertia ixx="0.009156" ixy="0" ixz="0" iyy="0.000162" iyz="0" izz="0.009156"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_clevis.stl"/></geometry>
+      <material name="debug_clevis_magenta"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_tube.stl"/></geometry>
+      <material name="debug_shank_blue"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_ankle_cube.stl"/></geometry>
+      <material name="debug_ankle_orange"/>
+    </visual>
+    <visual>
+      <geometry><mesh filename="quadruped2_shank_spring_stub.stl"/></geometry>
+      <material name="debug_spring_yellow"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.165 0" rpy="1.5708 0 0"/>
+      <geometry><cylinder radius="0.024" length="0.33"/></geometry>
+    </collision>
+  </link>
+
+  <link name="rr_foot_link">
+    <inertial>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <mass value="0.18"/>
+      <inertia ixx="5.6448e-05" ixy="0" ixz="0" iyy="5.6448e-05" iyz="0" izz="5.6448e-05"/>
+    </inertial>
+    <visual>
+      <geometry><mesh filename="quadruped2_foot.stl"/></geometry>
+      <material name="rubber_black"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.068 0" rpy="0 0 0"/>
+      <geometry><sphere radius="0.028"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="fl_haa" type="revolute">
+    <parent link="base_link"/><child link="fl_hip_link"/>
+    <origin xyz="0.24 0.52 0.128" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.663" upper="0.663" effort="80" velocity="12"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="fl_hfe" type="revolute">
+    <parent link="fl_hip_link"/><child link="fl_thigh_link"/>
+    <origin xyz="0 -0.072 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.349" upper="1.92" effort="120" velocity="15"/>
+    <dynamics damping="0.12" friction="0.03"/>
+  </joint>
+
+  <joint name="fl_kfe" type="revolute">
+    <parent link="fl_thigh_link"/><child link="fl_shank_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.705" upper="-0.175" effort="120" velocity="15"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="fl_foot_fixed" type="fixed">
+    <parent link="fl_shank_link"/><child link="fl_foot_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="fr_haa" type="revolute">
+    <parent link="base_link"/><child link="fr_hip_link"/>
+    <origin xyz="0.24 0.52 -0.128" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.663" upper="0.663" effort="80" velocity="12"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="fr_hfe" type="revolute">
+    <parent link="fr_hip_link"/><child link="fr_thigh_link"/>
+    <origin xyz="0 -0.072 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.349" upper="1.92" effort="120" velocity="15"/>
+    <dynamics damping="0.12" friction="0.03"/>
+  </joint>
+
+  <joint name="fr_kfe" type="revolute">
+    <parent link="fr_thigh_link"/><child link="fr_shank_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.705" upper="-0.175" effort="120" velocity="15"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="fr_foot_fixed" type="fixed">
+    <parent link="fr_shank_link"/><child link="fr_foot_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="rl_haa" type="revolute">
+    <parent link="base_link"/><child link="rl_hip_link"/>
+    <origin xyz="-0.24 0.52 0.128" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.663" upper="0.663" effort="80" velocity="12"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="rl_hfe" type="revolute">
+    <parent link="rl_hip_link"/><child link="rl_thigh_link"/>
+    <origin xyz="0 -0.072 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.349" upper="1.92" effort="120" velocity="15"/>
+    <dynamics damping="0.12" friction="0.03"/>
+  </joint>
+
+  <joint name="rl_kfe" type="revolute">
+    <parent link="rl_thigh_link"/><child link="rl_shank_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.705" upper="-0.175" effort="120" velocity="15"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="rl_foot_fixed" type="fixed">
+    <parent link="rl_shank_link"/><child link="rl_foot_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+  </joint>
+
+  <joint name="rr_haa" type="revolute">
+    <parent link="base_link"/><child link="rr_hip_link"/>
+    <origin xyz="-0.24 0.52 -0.128" rpy="0 0 0"/>
+    <axis xyz="1 0 0"/>
+    <limit lower="-0.663" upper="0.663" effort="80" velocity="12"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="rr_hfe" type="revolute">
+    <parent link="rr_hip_link"/><child link="rr_thigh_link"/>
+    <origin xyz="0 -0.072 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-0.349" upper="1.92" effort="120" velocity="15"/>
+    <dynamics damping="0.12" friction="0.03"/>
+  </joint>
+
+  <joint name="rr_kfe" type="revolute">
+    <parent link="rr_thigh_link"/><child link="rr_shank_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="-2.705" upper="-0.175" effort="120" velocity="15"/>
+    <dynamics damping="0.1" friction="0.03"/>
+  </joint>
+
+  <joint name="rr_foot_fixed" type="fixed">
+    <parent link="rr_shank_link"/><child link="rr_foot_link"/>
+    <origin xyz="0 -0.33 0" rpy="0 0 0"/>
+  </joint>
+
+  <texttocad:poses>
+
+    <!-- Nominal standing, ~0.52 m hip height, slight knee bend -->
+    <texttocad:pose name="neutral_stand">
+      <texttocad:joint name="fl_haa" value="5"/>
+      <texttocad:joint name="fl_hfe" value="38"/>
+      <texttocad:joint name="fl_kfe" value="-76"/>
+      <texttocad:joint name="fr_haa" value="-5"/>
+      <texttocad:joint name="fr_hfe" value="38"/>
+      <texttocad:joint name="fr_kfe" value="-76"/>
+      <texttocad:joint name="rl_haa" value="5"/>
+      <texttocad:joint name="rl_hfe" value="-10"/>
+      <texttocad:joint name="rl_kfe" value="-60"/>
+      <texttocad:joint name="rr_haa" value="-5"/>
+      <texttocad:joint name="rr_hfe" value="-10"/>
+      <texttocad:joint name="rr_kfe" value="-60"/>
+    </texttocad:pose>
+
+    <!-- Trot gait snapshot: FL+RR swing, FR+RL stance -->
+    <texttocad:pose name="trot_preview">
+      <texttocad:joint name="fl_haa" value="3"/>
+      <texttocad:joint name="fl_hfe" value="58"/>
+      <texttocad:joint name="fl_kfe" value="-110"/>
+      <texttocad:joint name="fr_haa" value="-3"/>
+      <texttocad:joint name="fr_hfe" value="28"/>
+      <texttocad:joint name="fr_kfe" value="-55"/>
+      <texttocad:joint name="rl_haa" value="3"/>
+      <texttocad:joint name="rl_hfe" value="-8"/>
+      <texttocad:joint name="rl_kfe" value="-50"/>
+      <texttocad:joint name="rr_haa" value="-3"/>
+      <texttocad:joint name="rr_hfe" value="20"/>
+      <texttocad:joint name="rr_kfe" value="-88"/>
+    </texttocad:pose>
+
+    <!-- Low crouch / pre-jump -->
+    <texttocad:pose name="crouch">
+      <texttocad:joint name="fl_haa" value="6"/>
+      <texttocad:joint name="fl_hfe" value="72"/>
+      <texttocad:joint name="fl_kfe" value="-144"/>
+      <texttocad:joint name="fr_haa" value="-6"/>
+      <texttocad:joint name="fr_hfe" value="72"/>
+      <texttocad:joint name="fr_kfe" value="-144"/>
+      <texttocad:joint name="rl_haa" value="6"/>
+      <texttocad:joint name="rl_hfe" value="38"/>
+      <texttocad:joint name="rl_kfe" value="-130"/>
+      <texttocad:joint name="rr_haa" value="-6"/>
+      <texttocad:joint name="rr_hfe" value="38"/>
+      <texttocad:joint name="rr_kfe" value="-130"/>
+    </texttocad:pose>
+
+    <!-- Sit: hindlegs folded, forelegs extended -->
+    <texttocad:pose name="sit">
+      <texttocad:joint name="fl_haa" value="4"/>
+      <texttocad:joint name="fl_hfe" value="20"/>
+      <texttocad:joint name="fl_kfe" value="-40"/>
+      <texttocad:joint name="fr_haa" value="-4"/>
+      <texttocad:joint name="fr_hfe" value="20"/>
+      <texttocad:joint name="fr_kfe" value="-40"/>
+      <texttocad:joint name="rl_haa" value="8"/>
+      <texttocad:joint name="rl_hfe" value="90"/>
+      <texttocad:joint name="rl_kfe" value="-148"/>
+      <texttocad:joint name="rr_haa" value="-8"/>
+      <texttocad:joint name="rr_hfe" value="90"/>
+      <texttocad:joint name="rr_kfe" value="-148"/>
+    </texttocad:pose>
+
+  </texttocad:poses>
+</robot>

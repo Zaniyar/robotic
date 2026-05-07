@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Training a Quadruped from Scratch · Isaac Lab Notes · Zaniyar Jahany</title>
+<style>
+  :root{
+    --bg:#0a2540;
+    --grid:rgba(120,180,255,.08);
+    --grid-strong:rgba(120,180,255,.18);
+    --ink:#cfe3ff;
+    --ink-dim:#7fa7d4;
+    --accent:#7ad7ff;
+    --accent-2:#ffd86b;
+    --good:#7CFFB2;
+    --bad:#ff8a8a;
+    --warn:#ffb86b;
+    --line:rgba(173,216,255,.35);
+    --mono:'JetBrains Mono','Fira Code',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7}
+  body{
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px),
+      linear-gradient(var(--grid-strong) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid-strong) 1px,transparent 1px),
+      radial-gradient(ellipse at 50% -10%, #14437a 0%, var(--bg) 60%);
+    background-size:24px 24px,24px 24px,120px 120px,120px 120px,100% 100%;
+    padding-bottom:140px;
+  }
+  .frame{max-width:920px;margin:0 auto;padding:48px 56px;position:relative}
+  .frame::before,.frame::after,.frame > .corner-bl,.frame > .corner-br{
+    content:"";position:absolute;width:22px;height:22px;border:1.5px solid var(--line);
+  }
+  .frame::before{top:24px;left:24px;border-right:none;border-bottom:none}
+  .frame::after{top:24px;right:24px;border-left:none;border-bottom:none}
+  .corner-bl{bottom:24px;left:24px;border-right:none;border-top:none}
+  .corner-br{bottom:24px;right:24px;border-left:none;border-top:none}
+
+  header.title{
+    border-bottom:1px solid var(--line);padding-bottom:24px;margin-bottom:36px;
+  }
+  header.title .kicker{
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;
+  }
+  header.title h1{font-family:var(--mono);font-weight:500;font-size:30px;letter-spacing:.02em;margin:0 0 14px;color:#fff;line-height:1.25}
+  header.title .lead{color:var(--ink-dim);font-size:16px;max-width:680px;margin:0 0 18px}
+  header.title .meta{font-family:var(--mono);font-size:12px;color:var(--ink-dim);display:flex;gap:24px;flex-wrap:wrap;letter-spacing:.04em}
+  header.title .meta b{color:var(--accent);font-weight:500}
+
+  section.block{
+    margin:56px 0;padding:28px 32px;border:1px solid var(--line);border-radius:2px;position:relative;
+    background:linear-gradient(180deg,rgba(255,255,255,.015),rgba(255,255,255,0));
+    opacity:0;transform:translateY(20px);transition:opacity .8s ease,transform .8s ease;
+    scroll-margin-top:24px;scroll-margin-bottom:140px;
+  }
+  section.block.in{opacity:1;transform:none}
+  section.block::before{content:"";position:absolute;top:-1px;left:-1px;width:18px;height:18px;border-top:2px solid var(--accent);border-left:2px solid var(--accent)}
+  section.block::after{content:"";position:absolute;bottom:-1px;right:-1px;width:18px;height:18px;border-bottom:2px solid var(--accent);border-right:2px solid var(--accent)}
+
+  h2{
+    font-family:var(--mono);font-weight:500;letter-spacing:.04em;font-size:20px;
+    margin:0 0 4px;color:#fff;display:flex;align-items:center;gap:14px;
+  }
+  h2 .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:34px;height:34px;border:1.5px solid var(--accent);color:var(--accent);
+    font-family:var(--mono);font-size:13px;border-radius:50%;flex:0 0 auto;
+  }
+  .sub{color:var(--ink-dim);font-family:var(--mono);font-size:12px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:22px}
+
+  h3{font-family:var(--mono);font-weight:500;font-size:14.5px;letter-spacing:.04em;color:var(--accent);margin:28px 0 8px;display:flex;align-items:center;gap:10px}
+  h3 .tag{font-size:11px;color:var(--ink-dim);border:1px solid var(--line);padding:1px 8px;border-radius:999px;letter-spacing:.1em;text-transform:uppercase}
+
+  p{margin:10px 0}
+  p b{color:#fff}
+
+  pre,code{font-family:var(--mono)}
+  pre{background:rgba(7,22,42,.7);border:1px solid var(--line);padding:14px 16px;overflow-x:auto;font-size:12.5px;color:#e6f1ff;border-radius:2px;position:relative}
+  pre::before{content:"$";position:absolute;top:8px;right:12px;color:var(--ink-dim);font-size:11px;letter-spacing:.2em}
+  code{background:rgba(122,215,255,.08);padding:1px 6px;border-radius:3px;font-size:.92em;color:#cfe9ff}
+
+  .scroll{overflow-x:auto;margin:14px 0;border:1px solid var(--line)}
+  table{border-collapse:collapse;width:100%;font-size:13.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:rgba(122,215,255,.06);font-family:var(--mono);font-weight:500;letter-spacing:.04em;color:var(--accent)}
+  tr:last-child td{border-bottom:none}
+
+  .callout{border-left:3px solid var(--accent);background:rgba(122,215,255,.05);padding:14px 18px;margin:16px 0;font-size:14px}
+  .callout.warn{border-left-color:var(--accent-2);background:rgba(255,216,107,.06)}
+  .callout.bad{border-left-color:var(--bad);background:rgba(255,138,138,.06)}
+  .callout.good{border-left-color:var(--good);background:rgba(124,255,178,.06)}
+  .callout b{color:#fff}
+
+  ul,ol{padding-left:22px}
+  ul li,ol li{margin:6px 0}
+  ul.checks{list-style:none;padding:0}
+  ul.checks li{padding:5px 0 5px 28px;position:relative}
+  ul.checks li::before{content:"";position:absolute;left:0;top:9px;width:14px;height:14px;border:1.5px solid var(--good);background:var(--good);border-radius:3px}
+  ul.checks li::after{content:"";position:absolute;left:3px;top:10px;width:8px;height:4px;border-left:2px solid var(--bg);border-bottom:2px solid var(--bg);transform:rotate(-45deg)}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--ink-dim);border:1px solid var(--line);padding:2px 8px;border-radius:999px;letter-spacing:.08em;text-transform:uppercase}
+
+  .keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:14px 0}
+  .keycap{display:flex;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);background:rgba(7,22,42,.5);border-radius:2px}
+  .keycap kbd{font-family:var(--mono);font-size:13px;color:#fff;background:rgba(122,215,255,.12);border:1px solid var(--accent);padding:4px 10px;border-radius:4px;min-width:28px;text-align:center;box-shadow:0 2px 0 rgba(122,215,255,.2)}
+  .keycap small{color:var(--ink-dim);font-size:12px}
+
+  .toc{
+    border:1px dashed var(--line);padding:18px 24px;margin:24px 0 0;background:rgba(7,22,42,.4);
+  }
+  .toc h4{margin:0 0 10px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-dim);font-weight:500}
+  .toc ol{margin:0;columns:2;column-gap:32px;padding-left:18px;font-size:13.5px}
+  @media (max-width:680px){.toc ol{columns:1}.frame{padding:24px}}
+  .toc a{color:var(--ink);text-decoration:none;border-bottom:1px dotted var(--line)}
+  .toc a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+  /* loop diagram */
+  .loop-fig{display:flex;justify-content:center;margin:18px 0}
+  .loop-fig svg{width:100%;max-width:680px;height:auto}
+  .loop-fig text{font-family:var(--mono);font-size:11px;fill:var(--ink)}
+  .loop-fig .arrow{stroke:var(--accent);stroke-width:1.4;fill:none;marker-end:url(#ah)}
+  .loop-fig .node{fill:rgba(122,215,255,.06);stroke:var(--accent);stroke-width:1.2}
+  .loop-fig .label{fill:var(--accent);font-weight:500}
+
+  /* 3D viewer */
+  .viewer-card{
+    margin:18px 0;border:1px solid var(--accent);border-radius:2px;
+    background:linear-gradient(180deg,rgba(122,215,255,.06),rgba(7,22,42,.6));
+    overflow:hidden;position:relative;
+    box-shadow:0 0 0 1px rgba(122,215,255,.1) inset, 0 0 40px rgba(122,215,255,.08);
+  }
+  .viewer-card .viewer-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:10px 16px;border-bottom:1px solid var(--line);
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);
+    background:rgba(7,22,42,.5);
+  }
+  .viewer-card .viewer-head .lhs{display:flex;align-items:center;gap:10px;color:var(--accent)}
+  .viewer-card .viewer-head .pulse-dot{
+    width:8px;height:8px;border-radius:50%;background:var(--good);
+    box-shadow:0 0 8px var(--good);animation:pulse 2s ease-in-out infinite;
+  }
+  .viewer-card .canvas-host{
+    position:relative;width:100%;aspect-ratio:16/10;background:
+      radial-gradient(ellipse at 50% 60%, rgba(20,67,122,.6) 0%, var(--bg) 70%);
+  }
+  .viewer-card canvas{display:block;width:100%;height:100%}
+  .viewer-card .legend{
+    position:absolute;top:12px;right:12px;display:flex;flex-direction:column;gap:6px;
+    font-family:var(--mono);font-size:11px;color:var(--ink);
+    background:rgba(7,22,42,.7);border:1px solid var(--line);padding:8px 10px;border-radius:2px;
+    backdrop-filter:blur(4px);pointer-events:none;
+  }
+  .viewer-card .legend i{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:middle}
+  .viewer-card .hint{
+    position:absolute;bottom:12px;left:12px;
+    font-family:var(--mono);font-size:11px;color:var(--ink-dim);
+    background:rgba(7,22,42,.7);border:1px solid var(--line);padding:6px 10px;border-radius:2px;
+    backdrop-filter:blur(4px);
+  }
+  .viewer-card .controls{
+    display:flex;align-items:center;gap:10px;padding:10px 16px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:12px;color:var(--ink-dim);
+    background:rgba(7,22,42,.5);flex-wrap:wrap;
+  }
+  .viewer-card .controls label{display:flex;align-items:center;gap:8px;flex:1;min-width:160px}
+  .viewer-card .controls input[type=range]{flex:1;accent-color:var(--accent)}
+  .viewer-card .controls .val{color:var(--accent);min-width:46px;text-align:right}
+  .viewer-card .controls button{
+    background:transparent;border:1px solid var(--line);color:var(--ink-dim);
+    font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:2px;cursor:pointer;letter-spacing:.06em;
+  }
+  .viewer-card .controls button:hover{border-color:var(--accent);color:var(--accent)}
+  .viewer-card .err{
+    padding:18px;color:var(--bad);font-family:var(--mono);font-size:12px;
+  }
+
+  /* author card */
+  .author{
+    margin-top:48px;padding:18px 22px;border:1px solid var(--line);border-radius:2px;
+    display:flex;gap:18px;align-items:center;background:rgba(7,22,42,.4);
+  }
+  .author .avatar{
+    width:54px;height:54px;border-radius:50%;border:1.5px solid var(--accent);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:18px;color:var(--accent);
+    background:rgba(122,215,255,.08);flex:0 0 auto;
+  }
+  .author .who b{color:#fff;font-family:var(--mono);font-size:14px}
+  .author .who small{color:var(--ink-dim);font-family:var(--mono);font-size:12px;display:block;margin-top:2px}
+  .author a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--line)}
+
+  /* footer steps */
+  footer.steps{position:fixed;left:0;right:0;bottom:0;background:rgba(8,28,54,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);z-index:50}
+  footer.steps .progress{height:2px;background:linear-gradient(90deg,var(--good) var(--p,0%),transparent var(--p,0%));transition:--p .4s ease}
+  footer.steps .inner{max-width:1400px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:8px;overflow-x:auto}
+  footer.steps button{
+    flex:0 0 auto;background:transparent;border:1px solid var(--line);color:var(--ink-dim);
+    font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;padding:8px 14px;border-radius:2px;
+    cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s ease;white-space:nowrap;
+  }
+  footer.steps button:hover{border-color:var(--accent);color:var(--accent)}
+  footer.steps button.active{border-color:var(--accent);color:var(--accent);background:rgba(122,215,255,.08);box-shadow:0 0 0 1px var(--accent) inset, 0 0 24px rgba(122,215,255,.18)}
+  footer.steps button .dot{width:10px;height:10px;border-radius:50%;border:1.5px solid currentColor}
+
+  @keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+  .sweep-host{position:relative;overflow:hidden}
+  .sweep-host::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(122,215,255,.05),transparent);animation:sweep 9s linear infinite;pointer-events:none}
+  @keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+  .pulse{animation:pulse 2.4s ease-in-out infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spin{animation:spin 14s linear infinite;transform-origin:center}
+
+  .ico{width:18px;height:18px;flex:0 0 auto;stroke:currentColor;stroke-width:1.6;fill:none}
+  .sep{border:none;height:1px;background:linear-gradient(90deg,transparent,var(--line),transparent);margin:48px 0}
+  a{color:var(--accent);text-decoration:none;border-bottom:1px dashed var(--line)}
+  a:hover{border-bottom-style:solid}
+
+  ::-webkit-scrollbar{height:8px;width:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(122,215,255,.2);border-radius:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+</style>
+</head>
+<body>
+<div class="frame sweep-host">
+  <span class="corner-bl"></span><span class="corner-br"></span>
+
+  <header class="title">
+    <div class="kicker">Field Notes · Robotics · 2026</div>
+    <h1>Training a Custom Quadruped from Scratch in Isaac Lab</h1>
+    <p class="lead">
+      A short, opinionated walkthrough. From an empty machine to a 12-DoF robot that learns to step.
+      Reference robot: <b>ZHAW Wild V1</b>. Things that differ from the NVIDIA examples are flagged inline.
+    </p>
+    <div class="meta">
+      <span>BY <b>Zaniyar Jahany</b></span>
+      <span>CONTACT <b><a href="mailto:jaha@zhaw.ch">jaha@zhaw.ch</a></b></span>
+      <span>STACK <b>Isaac Sim 5.1 · Isaac Lab · PPO</b></span>
+    </div>
+
+    <div class="toc">
+      <h4>Contents</h4>
+      <ol>
+        <li><a href="#s1">Sim vs. Lab, in plain words</a></li>
+        <li><a href="#s2">Install on Windows</a></li>
+        <li><a href="#s3">First examples to run</a></li>
+        <li><a href="#s4">Designing in Fusion 360</a></li>
+        <li><a href="#s5">Exporting to URDF</a></li>
+        <li><a href="#s6">Loading into Isaac Lab</a></li>
+        <li><a href="#s7">Building the training env</a></li>
+        <li><a href="#s8">Reward shaping &amp; the crawl trap</a></li>
+        <li><a href="#s9">Running PPO &amp; reading the log</a></li>
+        <li><a href="#s10">Kick test for robustness</a></li>
+        <li><a href="#s11">What I would do differently</a></li>
+        <li><a href="#src">Appendix · Source files</a></li>
+      </ol>
+    </div>
+  </header>
+
+  <!-- ============ 1 ============ -->
+  <section class="block" id="s1">
+    <div class="sub">part 01</div>
+    <h2><span class="num">1</span>
+      <svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Sim vs. Lab, in plain words
+    </h2>
+    <p>
+      The two names confuse everyone. Here is the short version.
+    </p>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Tool</th><th>What it is</th><th>You touch it when</th></tr></thead>
+        <tbody>
+          <tr><td><b>Isaac Sim</b></td><td>The simulator. PhysX physics engine plus a USD scene graph plus a Python API.</td><td>You want a 3D world with gravity, collisions, lights, cameras.</td></tr>
+          <tr><td><b>Isaac Lab</b></td><td>A framework on top of Isaac Sim, focused on RL training. Manager-based environments, vectorised envs, reward terms, terrain generators.</td><td>You want to train a policy. You almost never script Isaac Sim by hand once you use Lab.</td></tr>
+          <tr><td><b>rsl_rl</b></td><td>The PPO trainer that ships with Isaac Lab. Other choices: rl_games, skrl. PPO is the default for locomotion.</td><td>You hit <code>train.py</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Mental model if you come from web dev: Isaac Sim is the renderer plus physics. Isaac Lab is the game framework
+      that wires up player input, scoring, level reset, and parallel instances. PPO is the agent that figures out the controls.
+    </p>
+  </section>
+
+  <!-- ============ 2 ============ -->
+  <section class="block" id="s2">
+    <div class="sub">part 02</div>
+    <h2><span class="num">2</span>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Install on Windows
+    </h2>
+
+    <p>
+      The clean path that worked here is the <b>pip install</b> of Isaac Sim plus Isaac Lab from source, all in one
+      Python 3.11 venv. No Docker, no Visual Studio, no source build of Sim. Big install, but reproducible.
+    </p>
+
+    <h3>What lives where</h3>
+    <pre>Isaac Lab repo : C:\Users\jaha\robotic\IsaacLab
+Virtual env    : C:\Users\jaha\env_isaaclab
+Python         : 3.11
+Isaac Sim      : 5.1.0
+torch          : 2.7.0+cu128</pre>
+
+    <h3>The five commands that matter</h3>
+    <pre>py -3.11 -m venv C:\Users\jaha\env_isaaclab
+git clone https://github.com/isaac-sim/IsaacLab.git C:\Users\jaha\robotic\IsaacLab
+
+C:\Users\jaha\env_isaaclab\Scripts\python.exe -m pip install ^
+  "isaacsim[all,extscache]==5.1.0" --extra-index-url https://pypi.nvidia.com
+
+C:\Users\jaha\env_isaaclab\Scripts\python.exe -m pip install -U ^
+  torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 ^
+  --index-url https://download.pytorch.org/whl/cu128
+
+cd C:\Users\jaha\robotic\IsaacLab
+.\isaaclab.bat -i</pre>
+
+    <div class="callout warn">
+      <b>Path length matters on Windows.</b> Keep everything under <code>C:\Users\jaha\</code> or enable long paths.
+      Deeply nested install paths break the cache extractor without a useful error.
+    </div>
+    <div class="callout warn">
+      <b>PowerShell vs cmd.exe.</b> Mixing them silently does the wrong thing. In PowerShell use
+      <code>$env:VAR = "value"</code>, not <code>set VAR=value</code>. The line continuation char is a backtick, not a caret.
+    </div>
+  </section>
+
+  <!-- ============ 3 ============ -->
+  <section class="block" id="s3">
+    <div class="sub">part 03</div>
+    <h2><span class="num">3</span>
+      <svg class="ico" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      First examples to run
+    </h2>
+    <p>
+      Before touching your own robot, run two NVIDIA examples to confirm the install.
+      All three scripts below ship with Isaac Lab and live in the cloned repo under <code>IsaacLab/scripts/</code>.
+      <span class="badge">stock isaac lab</span>
+    </p>
+
+    <h3>Spawn a primitive</h3>
+    <pre>cd C:\Users\jaha\robotic\IsaacLab
+C:\Users\jaha\env_isaaclab\Scripts\python.exe scripts\tutorials\00_sim\spawn_prims.py</pre>
+    <p>A box appears in a scene. Read the script top to bottom. This is your <code>scene.add(mesh)</code> equivalent.</p>
+
+    <h3>Drive an articulation</h3>
+    <pre>C:\Users\jaha\env_isaaclab\Scripts\python.exe scripts\tutorials\01_assets\run_articulation.py</pre>
+    <p>A robot appears, joints driven by code. The class to look for is <code>ArticulationAction</code>. Joints are the things RL will eventually control.</p>
+
+    <h3>Train a built-in robot, end to end</h3>
+    <pre>C:\Users\jaha\env_isaaclab\Scripts\python.exe scripts\reinforcement_learning\rsl_rl\train.py ^
+  --task=Isaac-Velocity-Rough-Anymal-C-v0 --headless</pre>
+    <p>
+      This trains Anymal-C on rough terrain. If the terminal prints rising mean rewards, the install is healthy.
+      You can interrupt at any point and play the latest checkpoint with <code>play.py</code>.
+    </p>
+  </section>
+
+  <!-- ============ 4 ============ -->
+  <section class="block" id="s4">
+    <div class="sub">part 04</div>
+    <h2><span class="num">4</span>
+      <svg class="ico spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>
+      Designing in Fusion 360
+    </h2>
+
+    <p>
+      Fusion is great for building the body. It is bad at exporting it. Plan for both phases.
+    </p>
+
+    <h3>Build it as components, not bodies</h3>
+    <p>
+      Each link must be its own <b>Component</b>. Bodies inside one component become a single rigid link in URDF,
+      which is almost never what you want. For the four legs of <b>ZHAW Wild</b>, use prefixes <code>fl_</code>, <code>fr_</code>,
+      <code>rl_</code>, <code>rr_</code> on every component name. You will love yourself in three hours.
+    </p>
+
+    <h3>Joint discipline</h3>
+    <ul>
+      <li><b>Revolute</b> for hips and knees. Always set joint limits in Fusion. URDF inherits them.</li>
+      <li><b>Rigid</b> for fixed connections. Cheaper than fixed joints in URDF.</li>
+      <li>Avoid <b>continuous</b> unless you really mean unbounded rotation. Wheels yes, hips no.</li>
+      <li>For copied legs, use <i>Make Independent</i> on the components. Otherwise both legs share one joint and the URDF will be mysterious.</li>
+    </ul>
+
+    <h3>Three things to set before export</h3>
+    <ol>
+      <li>Set the world origin sensibly. The base link will sit at this origin.</li>
+      <li>Apply real materials so mass and inertia are not zero. Steel is rarely correct for hobby parts. Use ABS or aluminum.</li>
+      <li>Pre-orient the robot to <b>Z-up</b> if your exporter offers it. Otherwise you fix this later in code.</li>
+    </ol>
+
+    <div class="callout">
+      <b>For ZHAW Wild specifically</b> the hierarchy was: <code>base_link</code> → 4 × (<code>hip_link</code>, <code>thigh_link</code>,
+      <code>shank_link</code>, <code>foot_link</code>). Three rotational joints per leg: <code>haa</code>, <code>hfe</code>, <code>kfe</code>.
+      That is the Spot and Anymal convention, which means RL configs from those robots transfer cleanly.
+    </div>
+  </section>
+
+  <!-- ============ 5 ============ -->
+  <section class="block" id="s5">
+    <div class="sub">part 05</div>
+    <h2><span class="num">5</span>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Exporting to URDF
+    </h2>
+
+    <p>
+      Fusion has no native URDF export. Use the <a href="https://github.com/ACDC4Robot/Fusion360" target="_blank" rel="noopener">ACDC4Robot</a>
+      add-in. It writes URDF in the Gazebo flavor, which is identical to what Isaac Lab consumes.
+      Three tabs to set: choose <b>URDF</b> as the format, pick an output folder, click run. The add-in walks the
+      component tree and emits one <code>&lt;link&gt;</code> per component plus one <code>&lt;joint&gt;</code> per Fusion joint.
+    </p>
+
+    <h3>Why URDF, not the USD that Fusion can spit out</h3>
+    <p>
+      A USD exported straight from CAD looks fine in a viewer and silently fails in Isaac Lab.
+      The same three sins show up every time:
+    </p>
+    <ul>
+      <li><b>No <code>ArticulationRootAPI</code></b> on the root prim. Isaac Lab does not see a robot, only a bag of Xforms.</li>
+      <li><b>Loose nested Xform hierarchy</b> like <code>/World/asm/asm/...</code> because every assembly layer becomes its own group.</li>
+      <li><b>Auto-generated joint names</b> stitched together from the connected components, for example <code>revolute_joint_body_uleg_fl</code>. They work mechanically, but no regex you write will be readable.</li>
+    </ul>
+    <p>
+      The fix is the same every time: regenerate URDF, hand that to Isaac Lab, and let Lab bake a compliant USD itself.
+      Isaac Lab adds the <code>ArticulationRootAPI</code>, contact-reporting hooks, and inertial tensors during conversion.
+      Going through URDF is the only path that gives you these for free.
+    </p>
+
+    <h3>What to fix in the URDF after export</h3>
+    <ul>
+      <li><b>Joint type.</b> ACDC4Robot sometimes emits <code>continuous</code> for joints you defined as revolute. Open the file, search for <code>type="continuous"</code>, replace with <code>type="revolute"</code>, and add <code>&lt;limit lower="..." upper="..."/&gt;</code>.</li>
+      <li><b>Y-up vs Z-up.</b> Most CAD exports are Y-up. Isaac is Z-up. Either rotate the robot in Fusion before export, or apply a <code>+90°</code> rotation in <code>init_state.rot</code> later. Quaternion <code>(w, x, y, z) = (0.7071, 0.7071, 0, 0)</code>.</li>
+      <li><b>Mass and inertia.</b> Confirm none are zero. Easiest check: load the URDF, run a step, watch if the robot collapses sensibly under gravity. A truly massless link is silent and weird.</li>
+      <li><b>Mesh paths.</b> URDF uses <code>package://</code> paths in ROS land. Isaac Lab is happy with relative <code>file://</code> paths or plain relative paths. Keep meshes next to the URDF.</li>
+    </ul>
+
+    <div class="callout warn">
+      <b>Naming convention is not optional.</b> If your joints come out as <code>revolute_joint_body_uleg_fl</code>,
+      every single regex in your actuator config and reward config has to match that. The Spot pattern of
+      <code>fl_haa</code>, <code>fl_hfe</code>, <code>fl_kfe</code> matches a one-line regex like <code>".*_hfe"</code>.
+      Worth a 10-minute rename pass right after export.
+    </div>
+  </section>
+
+  <!-- ============ 6 ============ -->
+  <section class="block" id="s6">
+    <div class="sub">part 06</div>
+    <h2><span class="num">6</span>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+      Loading into Isaac Lab
+    </h2>
+
+    <p>
+      Two files own the robot side: an <b>asset config</b> and a <b>task registration</b>. For ZHAW Wild they sit at:
+    </p>
+
+    <pre>IsaacLab\source\isaaclab_assets\isaaclab_assets\robots\zhawild.py
+IsaacLab\source\isaaclab_tasks\...\velocity\config\zhawild\__init__.py
+IsaacLab\source\isaaclab_tasks\...\velocity\config\zhawild\flat_env_cfg.py</pre>
+    <p style="color:var(--ink-dim);font-size:13px">
+      Open the live files: <a href="code/asset_cfg/zhawild.py" target="_blank">zhawild.py (asset)</a> ·
+      <a href="code/zhawild_task/__init__.py" target="_blank">__init__.py (task registration)</a> ·
+      <a href="code/zhawild_task/flat_env_cfg.py" target="_blank">flat_env_cfg.py (env)</a> ·
+      <a href="code/zhawild_task/agents/rsl_rl_ppo_cfg.py" target="_blank">rsl_rl_ppo_cfg.py (PPO)</a>.
+    </p>
+
+    <h3>The asset config <span class="tag"><a href="code/asset_cfg/zhawild.py" target="_blank" rel="noopener">view full file</a></span></h3>
+    <pre>ZHAWILD_CFG = ArticulationCfg(
+    spawn=sim_utils.UrdfFileCfg(
+        asset_path="path/to/quadruped_zhawild_v1/quadruped2.urdf",
+        rigid_props=...,
+        articulation_props=...,
+    ),
+    init_state=ArticulationCfg.InitialStateCfg(
+        pos=(0.0, 0.0, 0.75),
+        rot=(0.7071068, 0.7071068, 0.0, 0.0),    # Y-up to Z-up
+        joint_pos={".*": 0.0},
+    ),
+    actuators={
+        "legs": ImplicitActuatorCfg(
+            joint_names_expr=[".*_haa", ".*_hfe", ".*_kfe"],
+            stiffness=80.0, damping=2.0,
+        ),
+    },
+)</pre>
+
+    <div class="viewer-card">
+      <div class="viewer-head">
+        <span class="lhs"><span class="pulse-dot"></span>ZHAW Wild · live URDF preview</span>
+        <span>quadruped2.urdf · 17 links · 12 revolute</span>
+      </div>
+      <div class="canvas-host">
+        <canvas id="zhawild-canvas"></canvas>
+        <div id="viewer-status" style="position:absolute;left:12px;top:12px;font-family:var(--mono);font-size:11px;color:var(--accent);background:rgba(7,22,42,.8);border:1px solid var(--line);padding:6px 10px;border-radius:2px;backdrop-filter:blur(4px);max-width:60%">booting…</div>
+        <div class="legend">
+          <span><i style="background:#cccac4"></i>torso (alu)</span>
+          <span><i style="background:#262a30"></i>hip / thigh</span>
+          <span><i style="background:#0d40ff"></i>shank tube</span>
+          <span><i style="background:#ff7305"></i>ankle block</span>
+          <span><i style="background:#ee2adb"></i>clevis</span>
+          <span><i style="background:#0a0a0a"></i>foot (rubber)</span>
+        </div>
+        <div class="hint">drag · rotate &nbsp;|&nbsp; wheel · zoom</div>
+      </div>
+      <div class="controls">
+        <label>HFE <input type="range" id="ctrl-hfe" min="-1.0" max="1.0" step="0.01" value="0"/><span class="val" id="val-hfe">0.00</span></label>
+        <label>KFE <input type="range" id="ctrl-kfe" min="-2.4" max="-0.2" step="0.01" value="-1.2"/><span class="val" id="val-kfe">-1.20</span></label>
+        <button id="ctrl-reset">reset pose</button>
+        <button id="ctrl-spin">auto-rotate</button>
+      </div>
+    </div>
+    <p style="color:var(--ink-dim);font-size:13px;margin-top:-4px">
+      The viewer parses the same STL meshes Isaac Lab loads, in the same joint hierarchy. Drag the sliders to drive
+      the <code>hfe</code> (hip flexion) and <code>kfe</code> (knee) joints across all four legs.
+      Source: <a href="quadruped_zhawild_v1/quadruped2.urdf" target="_blank">quadruped2.urdf</a> +
+      <a href="quadruped_zhawild_v1/" target="_blank">11 STL meshes</a>.
+    </p>
+
+    <h3>Why URDF is passed in, not USD</h3>
+    <p>
+      Isaac Lab attaches contact-reporting APIs to the foot links during URDF conversion. That is what makes the
+      gait, air-time, slip, and body-contact reward terms work. If you pre-convert to USD outside the loop, you skip
+      that step and your foot contacts will be empty. Pass the URDF, let Lab convert it once, cache it.
+    </p>
+
+    <div class="callout">
+      <b>Wheel-legged robots</b> need a second actuator group. Wheels are <code>continuous</code> joints meant to
+      spin freely. If they sit on a stiff position-PD with target zero, the robot fights its own rolling motion.
+      The fix is two groups: <code>legs</code> with normal gains, and <code>wheels</code> with <code>stiffness=0</code>
+      plus light damping. ZHAW Wild has no wheels, so one actuator group is enough.
+    </div>
+  </section>
+
+  <!-- ============ 7 ============ -->
+  <section class="block" id="s7">
+    <div class="sub">part 07</div>
+    <h2><span class="num">7</span>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 12h3l2-7 4 14 2-7h7"/></svg>
+      Building the training environment
+    </h2>
+
+    <p>
+      An Isaac Lab env is a Python class made of seven configs. Read this once, then it is just lego.
+    </p>
+
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Config</th><th>What it defines</th><th>Game-dev analogue</th></tr></thead>
+        <tbody>
+          <tr><td><code>SceneCfg</code></td><td>Ground, lights, robot, sensors.</td><td>The level.</td></tr>
+          <tr><td><code>CommandsCfg</code></td><td>Target velocity vector resampled every N seconds.</td><td>The joystick input.</td></tr>
+          <tr><td><code>ActionsCfg</code></td><td>What the policy outputs. Usually joint position targets.</td><td>The buttons.</td></tr>
+          <tr><td><code>ObservationsCfg</code></td><td>Input tensor: base velocity, gravity vector, joint state, last action, optional height scan.</td><td>What the player sees.</td></tr>
+          <tr><td><code>RewardsCfg</code></td><td>Plus and minus terms accumulated every step.</td><td>The scoring.</td></tr>
+          <tr><td><code>TerminationsCfg</code></td><td>When to end the episode and respawn.</td><td>Game over.</td></tr>
+          <tr><td><code>EventCfg</code></td><td>Domain randomisation: friction, mass, push events.</td><td>Random chaos so it generalises.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The simulation loop, end to end</h3>
+    <div class="loop-fig">
+      <svg viewBox="0 0 680 200">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#7ad7ff"/>
+          </marker>
+        </defs>
+        <rect class="node" x="20"  y="60" width="130" height="80" rx="2"/>
+        <rect class="node" x="190" y="60" width="130" height="80" rx="2"/>
+        <rect class="node" x="360" y="60" width="130" height="80" rx="2"/>
+        <rect class="node" x="530" y="60" width="130" height="80" rx="2"/>
+        <text class="label" x="85"  y="92" text-anchor="middle">RESET?</text>
+        <text         x="85"  y="112" text-anchor="middle">timeout / fall</text>
+        <text class="label" x="255" y="92" text-anchor="middle">POLICY</text>
+        <text         x="255" y="112" text-anchor="middle">obs → action</text>
+        <text class="label" x="425" y="92" text-anchor="middle">WRITE</text>
+        <text         x="425" y="112" text-anchor="middle">→ PhysX</text>
+        <text class="label" x="595" y="92" text-anchor="middle">STEP</text>
+        <text         x="595" y="112" text-anchor="middle">sim.step()</text>
+        <path class="arrow" d="M150,100 L190,100"/>
+        <path class="arrow" d="M320,100 L360,100"/>
+        <path class="arrow" d="M490,100 L530,100"/>
+        <path class="arrow" d="M595,140 C595,180 85,180 85,140" />
+      </svg>
+    </div>
+    <p>
+      One iteration of the inner loop is one physics tick across all 1024 parallel envs. PPO collects 24 ticks per env,
+      runs a gradient update, and starts the next iteration. That is the heartbeat.
+    </p>
+
+    <h3>Terrain</h3>
+    <p>
+      Isaac Lab ships a procedural terrain generator. Three shapes you actually want:
+    </p>
+    <ul>
+      <li><b>Flat plane.</b> Use it for early training and for clean playback. Anything weird you see is the policy, not the floor.</li>
+      <li><b>Rough terrain.</b> Bumpy heightmap. Forces the policy to handle uneven contact, which is most of the value of training in sim.</li>
+      <li><b>Stairs and gaps.</b> Optional. Useful only if your reward and observation include height-scan info.</li>
+    </ul>
+
+    <h3>Obstacles</h3>
+    <p>
+      Movable obstacles are just rigid bodies you spawn into the scene with collision and mass. Boxes and cylinders work
+      fine. They are not part of the policy observation, the robot just bumps into them. Useful for stress testing and
+      for the kick-disturbance scenario described later.
+    </p>
+
+    <h3>Domain randomisation</h3>
+    <p>
+      The single thing that makes a sim-trained policy survive in the real world. In ZHAW Wild we randomise:
+    </p>
+    <ul>
+      <li>Static and dynamic friction at the foot per env.</li>
+      <li>Base mass within ±10 percent.</li>
+      <li>A small velocity push every 10 to 15 seconds, drawn from a square in the xy plane.</li>
+    </ul>
+    <p>
+      Each parallel env gets a different draw. With 1024 envs, the policy sees thousands of variations every minute.
+    </p>
+  </section>
+
+  <!-- ============ 8 ============ -->
+  <section class="block" id="s8">
+    <div class="sub">part 08</div>
+    <h2><span class="num">8</span>
+      <svg class="ico pulse" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      Reward shaping &amp; the crawl trap
+    </h2>
+
+    <p>
+      PPO does exactly what your reward function says, never what you meant. This was the most expensive lesson of the
+      whole project. On <b>Robot20</b>, our 2-DoF custom robot, 15 hours of GPU time produced a policy that maximised
+      every term we wrote, while crawling on its lower-leg shins like skis. No standing, no foot clearance, healthy
+      gait reward, full speed reward.
+    </p>
+
+    <h3>Three failures that compound</h3>
+    <ol>
+      <li><b>Gait reward checks alternation, not posture.</b> A crawling robot with alternating shin contact also satisfies it. Combine the gait term with a base-height target.</li>
+      <li><b>Termination only on torso and thigh.</b> The lower-leg segment was supposed to be the foot. Lying flat on it was perfectly legal. Add bottom-link termination, or a strong slip penalty when the bottom is in flat contact.</li>
+      <li><b>Geometry locks you in.</b> A 2-joint leg has no abduction and no ankle. Standing is hard, crawling is easy. No reward function can overcome that. <b>ZHAW Wild</b> with its three rotational DoF per leg does not have this problem.</li>
+    </ol>
+
+    <h3>Reward terms that work for a classical quadruped</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Term</th><th>Sign</th><th>Reads as</th></tr></thead>
+        <tbody>
+          <tr><td>track_lin_vel_xy_exp</td><td>+1.0</td><td>Match the commanded forward speed. Main objective.</td></tr>
+          <tr><td>track_ang_vel_z_exp</td><td>+0.5</td><td>Match the commanded turn rate.</td></tr>
+          <tr><td>feet_air_time</td><td>+0.125</td><td>Lift feet off the ground. Encourages stepping over sliding.</td></tr>
+          <tr><td>lin_vel_z_l2</td><td>−2.0</td><td>Do not bounce vertically.</td></tr>
+          <tr><td>ang_vel_xy_l2</td><td>−0.05</td><td>Do not wobble.</td></tr>
+          <tr><td>action_rate_l2</td><td>−0.01</td><td>Do not jerk joints around.</td></tr>
+          <tr><td>undesired_contacts</td><td>−1.0</td><td>Do not touch ground with thighs or torso.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout good">
+      <b>Rule of thumb.</b> A reward term should fail loudly when the behaviour you want is absent. If a crawling robot
+      can satisfy your gait reward, your gait reward is broken. Cross-check every term against a degenerate behaviour
+      before running 14 hours of training.
+    </div>
+  </section>
+
+  <!-- ============ 9 ============ -->
+  <section class="block" id="s9">
+    <div class="sub">part 09</div>
+    <h2><span class="num">9</span>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
+      Running PPO &amp; reading the log
+    </h2>
+
+    <p style="color:var(--ink-dim);font-size:13px">
+      <code>train.py</code> and <code>play.py</code> ship with Isaac Lab. <span class="badge">stock isaac lab</span>
+      The custom piece is the task ID <code>Isaac-Velocity-Flat-ZHAWild-v0</code>, which gets registered when our
+      <a href="code/zhawild_task/__init__.py" target="_blank">zhawild_task package</a> is on the import path.
+    </p>
+
+    <h3>Train</h3>
+    <pre>cd C:\Users\jaha\robotic\IsaacLab
+C:\Users\jaha\env_isaaclab\Scripts\python.exe ^
+  scripts\reinforcement_learning\rsl_rl\train.py ^
+  --task=Isaac-Velocity-Flat-ZHAWild-v0 --headless --num_envs=1024</pre>
+
+    <h3>Play a checkpoint</h3>
+    <pre>C:\Users\jaha\env_isaaclab\Scripts\python.exe ^
+  scripts\reinforcement_learning\rsl_rl\play.py ^
+  --task=Isaac-Velocity-Flat-ZHAWild-Play-v0 --num_envs=1 --real-time ^
+  --checkpoint logs\rsl_rl\zhawild_flat\2026-04-26_17-46-09\model_1500.pt</pre>
+
+    <h3>Five numbers to watch</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Metric</th><th>What it means</th><th>Healthy direction</th></tr></thead>
+        <tbody>
+          <tr><td>Mean reward</td><td>Sum of all terms, averaged across envs and steps.</td><td>Climbs, then plateaus. Absolute number is meaningless across reward configs.</td></tr>
+          <tr><td>Mean episode length</td><td>Steps survived before fall or timeout.</td><td>Climbs toward 1000 (the 20-second cap).</td></tr>
+          <tr><td>Body-contact fraction</td><td>Episodes that ended because torso or thigh hit the floor.</td><td>Drops toward zero. This is balance.</td></tr>
+          <tr><td>Mean noise std</td><td>Exploration noise on the action distribution.</td><td>Shrinks slowly. Stays positive.</td></tr>
+          <tr><td>Value-function loss</td><td>Critic fit quality.</td><td>Stable. Sudden growth is a divergence warning.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      For ZHAW Wild, after 2 h 11 min and 37 M timesteps, mean reward went from 0.9 to 48.7, episode length from 14 to 292,
+      body-contact from 100 percent to 73 percent. The policy is learning. It still falls in three out of four episodes.
+      That is the next training target.
+    </p>
+
+    <div class="callout bad">
+      <b>Two failure modes I have hit.</b> First, <code>RuntimeError: normal expects all elements of std &gt;= 0.0</code> when the
+      action-noise std drifts negative. Patch it in PPO by clamping std to a small positive minimum. Second, NaN drift
+      in value-function loss after thousands of healthy iterations. Save checkpoints every 50 iterations, and never
+      replay the last one. Pick a mid-run model that still has good metrics.
+    </div>
+  </section>
+
+  <!-- ============ 10 ============ -->
+  <section class="block" id="s10">
+    <div class="sub">part 10</div>
+    <h2><span class="num">10</span>
+      <svg class="ico" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 14l2 2 4-4"/></svg>
+      The kick test
+    </h2>
+
+    <p>
+      Reward curves do not tell you whether the policy is robust. A kick test does. The training-time push event covers
+      the small disturbances. For a controlled scientific test you want repeatable kicks with known direction and magnitude.
+    </p>
+
+    <h3>Why keyboard, not mouse</h3>
+    <p>
+      Mouse-click kicks need a viewport raycast. In Isaac Sim 5.1.0 the viewport mouse events are intercepted by the
+      selection and manipulator system before any custom subscriber sees them. Left-click on the robot just selects
+      its prim. Keyboard events go through <code>carb.input</code> which is not affected by UI focus and works as long
+      as the Sim window itself is active.
+    </p>
+
+    <h3>Bindings</h3>
+    <div class="keys">
+      <div class="keycap"><kbd>I</kbd><small>Kick forward (+X)</small></div>
+      <div class="keycap"><kbd>K</kbd><small>Kick backward (−X)</small></div>
+      <div class="keycap"><kbd>J</kbd><small>Kick left (+Y)</small></div>
+      <div class="keycap"><kbd>L</kbd><small>Kick right (−Y)</small></div>
+      <div class="keycap"><kbd>U</kbd><small>Upward boost (+Z)</small></div>
+      <div class="keycap"><kbd>R</kbd><small>Reset env 0</small></div>
+      <div class="keycap"><kbd>P</kbd><small>Print pose &amp; velocity</small></div>
+    </div>
+    <p style="color:var(--ink-dim);font-size:13px">I/J/K/L instead of WASD because WASD is reserved for the viewport fly-mode camera.</p>
+
+    <h3>Run <span class="tag"><a href="code/scripts/play_kickable.py" target="_blank" rel="noopener">play_kickable.py</a></span> <span class="badge">custom</span></h3>
+    <pre>C:\Users\jaha\env_isaaclab\Scripts\python.exe ^
+  path\to\code\scripts\play_kickable.py ^
+  --task=Isaac-Velocity-Flat-ZHAWild-Play-v0 --num_envs=1 --real-time ^
+  --checkpoint logs\rsl_rl\zhawild_flat\2026-04-26_17-46-09\model_1500.pt ^
+  --kick_speed 2.0</pre>
+
+    <h3>What the kicks tell you</h3>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Test</th><th>Sequence</th><th>Reads off</th></tr></thead>
+        <tbody>
+          <tr><td>Side push</td><td>walk forward, press <kbd>J</kbd> or <kbd>L</kbd></td><td>Recovery time and tracking error after the impulse.</td></tr>
+          <tr><td>Forward shove</td><td>standing, press <kbd>I</kbd></td><td>Whether it absorbs the shove or topples.</td></tr>
+          <tr><td>Backward shove</td><td>standing, press <kbd>K</kbd></td><td>Backwards stability. Almost always the weakest direction.</td></tr>
+          <tr><td>Vertical drop</td><td>press <kbd>U</kbd>, observe landing</td><td>Foot-impact handling.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The implementation pushes via <code>robot.write_root_velocity_to_sim(...)</code>, the same call the training-time
+      push event uses. Disturbances are physically equivalent to what the policy was trained against, just on demand.
+    </p>
+  </section>
+
+  <!-- ============ 11 ============ -->
+  <section class="block" id="s11">
+    <div class="sub">part 11</div>
+    <h2><span class="num">★</span>
+      <svg class="ico" viewBox="0 0 24 24"><polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2"/></svg>
+      What I would do differently
+    </h2>
+
+    <ul>
+      <li><b>Choose three rotational DoF per leg before anything else.</b> Two-joint legs are a research dead end for walking. Hip abduction is what makes lateral stability possible.</li>
+      <li><b>Treat URDF as the source of truth.</b> Generate USD via Isaac Lab on every load. Never edit USD by hand.</li>
+      <li><b>Name joints in the Spot convention</b> from the first Fusion sketch. <code>fl_haa</code>, <code>fl_hfe</code>, <code>fl_kfe</code>. Your future regex configs will thank you.</li>
+      <li><b>Run a smoke test before a long run.</b> One iteration with one env. If it crashes during Isaac Lab startup, the bug is import-time and a long run will not magically fix it.</li>
+      <li><b>Save checkpoints often, ignore the last one.</b> PPO can drift into NaN late in a run while reward and episode length still look fine. Keep <code>save_interval=50</code> and pick a mid-run model.</li>
+      <li><b>Cross-check rewards against degenerate behaviour</b> before kicking off training. If a crawl satisfies the gait reward, fix the reward, not the training time.</li>
+      <li><b>Build the kick tool early.</b> It takes an hour to write and changes how you evaluate every checkpoint afterwards.</li>
+    </ul>
+
+    <p style="margin-top:24px">
+      The custom-robot RL pipeline works end to end. URDF in, policy out, kick test for robustness.
+      The remaining work is reward design and physical design. Both of those compound.
+      Both of those are also where the interesting research lives.
+    </p>
+
+    <div class="author">
+      <div class="avatar">ZJ</div>
+      <div class="who">
+        <b>Zaniyar Jahany</b>
+        <small>ZHAW · <a href="mailto:jaha@zhaw.ch">jaha@zhaw.ch</a></small>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="src">
+    <div class="sub">appendix</div>
+    <h2><span class="num">A</span>
+      <svg class="ico" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      Source files
+    </h2>
+    <p style="color:var(--ink-dim)">
+      Every Python file referenced in this post is bundled next to it. Click to read in the browser, right-click to download.
+    </p>
+
+    <h3>Robot &amp; assets</h3>
+    <ul>
+      <li><a href="quadruped_zhawild_v1/quadruped2.urdf" target="_blank"><code>quadruped_zhawild_v1/quadruped2.urdf</code></a> — the URDF the viewer above and Isaac Lab both consume</li>
+      <li><a href="quadruped_zhawild_v1/" target="_blank"><code>quadruped_zhawild_v1/</code></a> — 11 STL meshes referenced by the URDF</li>
+    </ul>
+
+    <h3>Isaac Lab asset config</h3>
+    <ul>
+      <li><a href="code/asset_cfg/zhawild.py" target="_blank"><code>code/asset_cfg/zhawild.py</code></a> — <code>ZHAWILD_CFG</code>: spawn pose, Y-up to Z-up rotation, joint defaults, actuator gains. Goes into <code>IsaacLab/source/isaaclab_assets/isaaclab_assets/robots/</code>.</li>
+    </ul>
+
+    <h3>Training task package</h3>
+    <ul>
+      <li><a href="code/zhawild_task/__init__.py" target="_blank"><code>code/zhawild_task/__init__.py</code></a> — <code>gym.register(...)</code> for <code>Isaac-Velocity-Flat-ZHAWild-v0</code> and the play variant</li>
+      <li><a href="code/zhawild_task/flat_env_cfg.py" target="_blank"><code>code/zhawild_task/flat_env_cfg.py</code></a> — scene, observations, rewards, terminations, events, terrain</li>
+      <li><a href="code/zhawild_task/agents/rsl_rl_ppo_cfg.py" target="_blank"><code>code/zhawild_task/agents/rsl_rl_ppo_cfg.py</code></a> — PPO hyperparameters</li>
+      <li><a href="code/zhawild_task/mdp/__init__.py" target="_blank"><code>code/zhawild_task/mdp/__init__.py</code></a> — custom reward / observation terms re-exported here</li>
+    </ul>
+    <p style="color:var(--ink-dim);font-size:13px">
+      Drop the whole <code>code/zhawild_task/</code> folder into <code>IsaacLab/source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/zhawild/</code>.
+      Isaac Lab auto-imports task packages on startup, which is when <code>gym.register(...)</code> runs.
+    </p>
+
+    <h3>Runtime scripts</h3>
+    <ul>
+      <li><a href="code/scripts/load_zhawild.py" target="_blank"><code>code/scripts/load_zhawild.py</code></a> — minimal loader, drops the URDF into a Sim with ground and light. The "does the asset even spawn" smoke test.</li>
+      <li><a href="code/scripts/play_kickable.py" target="_blank"><code>code/scripts/play_kickable.py</code></a> — fork of <code>play.py</code> with the keyboard kick controller from Section 10</li>
+    </ul>
+
+    <h3>This page</h3>
+    <ul>
+      <li><a href="index.html" target="_blank"><code>index.html</code></a> — the post itself, plus the embedded Three.js URDF viewer in Section 6</li>
+      <li><a href="README.md" target="_blank"><code>README.md</code></a> — repo overview, how to run locally</li>
+    </ul>
+  </section>
+</div>
+
+<footer class="steps" aria-label="Sections">
+  <div class="progress" id="bar"></div>
+  <div class="inner" id="steps">
+    <button data-target="s1"><span class="dot"></span>01 · Sim vs Lab</button>
+    <button data-target="s2"><span class="dot"></span>02 · Install</button>
+    <button data-target="s3"><span class="dot"></span>03 · First examples</button>
+    <button data-target="s4"><span class="dot"></span>04 · Fusion 360</button>
+    <button data-target="s5"><span class="dot"></span>05 · URDF export</button>
+    <button data-target="s6"><span class="dot"></span>06 · Load in Lab</button>
+    <button data-target="s7"><span class="dot"></span>07 · Training env</button>
+    <button data-target="s8"><span class="dot"></span>08 · Reward shaping</button>
+    <button data-target="s9"><span class="dot"></span>09 · PPO &amp; logs</button>
+    <button data-target="s10"><span class="dot"></span>10 · Kick test</button>
+    <button data-target="s11"><span class="dot"></span>★ · Lessons</button>
+    <button data-target="src"><span class="dot"></span>A · Source files</button>
+  </div>
+</footer>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+    "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+    "urdf-loader": "https://unpkg.com/urdf-loader@0.12.6/src/URDFLoader.js"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+  import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+  import URDFLoader from 'urdf-loader';
+
+  const canvas = document.getElementById('zhawild-canvas');
+  if (!canvas) throw new Error('no canvas');
+
+  const status = document.getElementById('viewer-status');
+  const setStatus = (s, color) => {
+    if (!status) return;
+    status.textContent = s;
+    if (color) status.style.color = color;
+  };
+  window.addEventListener('error', e => setStatus('error: ' + e.message, '#ff8a8a'));
+  window.addEventListener('unhandledrejection', e => setStatus('error: ' + (e.reason?.message || e.reason), '#ff8a8a'));
+
+  const host = canvas.parentElement;
+  const w = () => host.clientWidth;
+  const h = () => host.clientHeight;
+
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w(), h(), false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x0a2540, 6, 18);
+
+  const camera = new THREE.PerspectiveCamera(38, w()/h(), 0.05, 50);
+  camera.position.set(2.0, 1.1, 2.4);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 1.0;
+  controls.maxDistance = 6;
+  controls.target.set(0, 0.4, 0);
+
+  scene.add(new THREE.HemisphereLight(0xb8d4ff, 0x10243d, 0.85));
+  const key = new THREE.DirectionalLight(0xffffff, 1.2);
+  key.position.set(3, 4, 2); scene.add(key);
+  const fill = new THREE.DirectionalLight(0x7ad7ff, 0.4);
+  fill.position.set(-2, 2, -2); scene.add(fill);
+
+  const grid = new THREE.GridHelper(6, 24, 0x7ad7ff, 0x244a78);
+  grid.material.transparent = true; grid.material.opacity = 0.35;
+  grid.position.y = 0; scene.add(grid);
+
+  // root container so we can convert URDF Z-up to Three.js Y-up cleanly
+  const root = new THREE.Group();
+  root.rotation.x = Math.PI / 0.5;        // URDF Y-up (legs hang in −Y) → Three Y-up
+  scene.add(root);
+
+  const stlLoader = new STLLoader();
+  const loader = new URDFLoader();
+  loader.workingPath  = './quadruped_zhawild_v1/';
+  loader.packages     = './quadruped_zhawild_v1/';
+  loader.parseCollision = false;
+  loader.loadMeshCb = (path, manager, done) => {
+    stlLoader.load(
+      path,
+      geom => {
+        geom.computeVertexNormals();
+        const mat = new THREE.MeshStandardMaterial({
+          color:0xb8b8b4, metalness:0.4, roughness:0.55,
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        done(mesh);
+      },
+      undefined,
+      err => done(null, err),
+    );
+  };
+
+  const palette = {
+    base_link        : 0xc6c6c2,
+    fl_hip_link      : 0x24292e, fr_hip_link   : 0x24292e,
+    rl_hip_link      : 0x24292e, rr_hip_link   : 0x24292e,
+    fl_thigh_link    : 0x141414, fr_thigh_link : 0x141414,
+    rl_thigh_link    : 0x141414, rr_thigh_link : 0x141414,
+    fl_foot_link     : 0x0a0a0a, fr_foot_link  : 0x0a0a0a,
+    rl_foot_link     : 0x0a0a0a, rr_foot_link  : 0x0a0a0a,
+  };
+
+  let robot;
+  let hfeJoints = [], kfeJoints = [];
+
+  setStatus('fetching quadruped2.urdf …');
+  let meshesPending = 0, meshesDone = 0, meshErrors = 0;
+  const origMeshCb = loader.loadMeshCb;
+  loader.loadMeshCb = (path, manager, done) => {
+    meshesPending++;
+    setStatus(`loading meshes  ${meshesDone}/${meshesPending}`);
+    origMeshCb(path, manager, (obj, err) => {
+      meshesDone++;
+      if (err){ meshErrors++; console.warn('mesh load failed:', path, err); }
+      setStatus(`loading meshes  ${meshesDone}/${meshesPending}${meshErrors ? `  (${meshErrors} failed)` : ''}`);
+      done(obj, err);
+    });
+  };
+
+  loader.load(
+    './quadruped_zhawild_v1/quadruped2.urdf',
+    parsed => {
+      robot = parsed;
+      console.log('[zhawild] urdf parsed, joints:', Object.keys(robot.joints), 'links:', Object.keys(robot.links));
+
+      // collect joints
+      hfeJoints = ['fl_hfe','fr_hfe','rl_hfe','rr_hfe'].map(n => robot.joints[n]).filter(Boolean);
+      kfeJoints = ['fl_kfe','fr_kfe','rl_kfe','rr_kfe'].map(n => robot.joints[n]).filter(Boolean);
+
+      // Tint links AFTER the URDFLoader has wired their materials.
+      // We schedule a microtask to run after pending mesh loads.
+      const finishUp = () => {
+        robot.traverse(o => {
+          if (o.isMesh && o.material){
+            const linkName = findLinkName(o);
+            if (linkName && palette[linkName] !== undefined){
+              o.material = o.material.clone();
+              o.material.color.setHex(palette[linkName]);
+            }
+          }
+        });
+
+        root.add(robot);
+        applyPose();
+
+        const bbox = new THREE.Box3().setFromObject(root);
+        if (isFinite(bbox.min.y)){
+          root.position.y -= bbox.min.y - 0.005;
+          const center = new THREE.Vector3();
+          bbox.getCenter(center);
+          controls.target.copy(center);
+          controls.update();
+        }
+        setStatus(`ready · ${Object.keys(robot.joints).length} joints · ${meshesDone} meshes${meshErrors ? `  (${meshErrors} failed)` : ''}`, '#7CFFB2');
+        setTimeout(() => { if (status) status.style.opacity = '0.4'; }, 2500);
+      };
+
+      // wait for in-flight async mesh loads to settle
+      const waitForMeshes = () => {
+        if (meshesDone >= meshesPending) finishUp();
+        else setTimeout(waitForMeshes, 80);
+      };
+      waitForMeshes();
+    },
+    undefined,
+    err => {
+      console.error('[zhawild viewer]', err);
+      setStatus('URDF fetch failed: ' + (err?.message || err), '#ff8a8a');
+    },
+  );
+
+  function findLinkName(obj){
+    let n = obj;
+    while (n){
+      if (n.isURDFLink && n.name) return n.name;
+      n = n.parent;
+    }
+    return null;
+  }
+
+  function applyPose(){
+    if (!robot) return;
+    const hfeVal = parseFloat(document.getElementById('ctrl-hfe').value);
+    const kfeVal = parseFloat(document.getElementById('ctrl-kfe').value);
+    for (const j of hfeJoints) j.setJointValue(hfeVal);
+    for (const j of kfeJoints) j.setJointValue(kfeVal);
+    document.getElementById('val-hfe').textContent = hfeVal.toFixed(2);
+    document.getElementById('val-kfe').textContent = kfeVal.toFixed(2);
+  }
+
+  document.getElementById('ctrl-hfe').addEventListener('input', applyPose);
+  document.getElementById('ctrl-kfe').addEventListener('input', applyPose);
+  document.getElementById('ctrl-reset').addEventListener('click', () => {
+    document.getElementById('ctrl-hfe').value = 0;
+    document.getElementById('ctrl-kfe').value = -1.2;
+    applyPose();
+  });
+
+  let spinning = false;
+  document.getElementById('ctrl-spin').addEventListener('click', e => {
+    spinning = !spinning;
+    e.currentTarget.style.color = spinning ? 'var(--accent)' : '';
+    e.currentTarget.style.borderColor = spinning ? 'var(--accent)' : '';
+  });
+
+  const clock = new THREE.Clock();
+  function tick(){
+    const dt = clock.getDelta();
+    if (spinning && robot) robot.rotation.y += dt * 0.4;   // yaw around URDF Y
+    controls.update();
+    renderer.render(scene, camera);
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  new ResizeObserver(() => {
+    renderer.setSize(w(), h(), false);
+    camera.aspect = w()/h();
+    camera.updateProjectionMatrix();
+  }).observe(host);
+</script>
+
+<script>
+  const buttons = document.querySelectorAll('footer.steps button');
+  const sections = [...document.querySelectorAll('section.block')];
+  const bar = document.getElementById('bar');
+
+  const setActive = id => {
+    buttons.forEach(b => b.classList.toggle('active', b.dataset.target === id));
+    const idx = sections.findIndex(s => s.id === id);
+    if (idx >= 0) bar.style.setProperty('--p', ((idx+1)/sections.length*100) + '%');
+  };
+
+  buttons.forEach(b => b.addEventListener('click', () => {
+    const t = document.getElementById(b.dataset.target);
+    if (t){
+      t.classList.add('in');
+      t.scrollIntoView({behavior:'smooth', block:'start'});
+      setActive(t.id);
+    }
+  }));
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        e.target.classList.add('in');
+        setActive(e.target.id);
+      }
+    });
+  }, {threshold:.05, rootMargin:'0px 0px -40% 0px'});
+
+  sections.forEach(s => io.observe(s));
+  window.addEventListener('load', () => {
+    setTimeout(() => sections.forEach(s => s.classList.add('in')), 600);
+  });
+
+  if (sections[0]) sections[0].classList.add('in');
+  setActive('s1');
+</script>
+</body>
+</html>
