@@ -179,6 +179,21 @@
   .viewer-card .err{
     padding:18px;color:var(--bad);font-family:var(--mono);font-size:12px;
   }
+  .viewer-card .tooltip{
+    position:absolute;pointer-events:none;
+    font-family:var(--mono);font-size:11.5px;color:#fff;
+    background:rgba(7,22,42,.92);border:1px solid var(--accent);
+    padding:5px 10px;border-radius:2px;
+    box-shadow:0 0 14px rgba(122,215,255,.25);
+    transform:translate(-50%,-130%);
+    white-space:nowrap;opacity:0;transition:opacity .12s ease;
+    z-index:5;letter-spacing:.04em;
+  }
+  .viewer-card .tooltip.on{opacity:1}
+  .viewer-card .tooltip::after{
+    content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:var(--accent);
+  }
 
   /* author card */
   .author{
@@ -508,7 +523,8 @@ IsaacLab\source\isaaclab_tasks\...\velocity\config\zhawild\flat_env_cfg.py</pre>
           <span><i style="background:#ee2adb"></i>clevis</span>
           <span><i style="background:#0a0a0a"></i>foot (rubber)</span>
         </div>
-        <div class="hint">drag · rotate &nbsp;|&nbsp; wheel · zoom</div>
+        <div class="hint">drag · rotate &nbsp;|&nbsp; wheel · zoom &nbsp;|&nbsp; hover · inspect</div>
+        <div id="link-tooltip" class="tooltip"></div>
       </div>
       <div class="controls">
         <label>HFE <input type="range" id="ctrl-hfe" min="-1.0" max="1.0" step="0.01" value="0"/><span class="val" id="val-hfe">0.00</span></label>
@@ -1081,6 +1097,53 @@ C:\Users\jaha\env_isaaclab\Scripts\python.exe ^
     spinning = !spinning;
     e.currentTarget.style.color = spinning ? 'var(--accent)' : '';
     e.currentTarget.style.borderColor = spinning ? 'var(--accent)' : '';
+  });
+
+  // hover tooltip: raycast against robot meshes, find nearest URDFLink ancestor
+  const tooltip = document.getElementById('link-tooltip');
+  const raycaster = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  let hoverTarget = null;
+
+  function prettyName(name){
+    // base_link → BASE  ·  fl_thigh_link → FL · THIGH
+    return name
+      .replace(/_link$/, '')
+      .replace(/_/g, ' · ')
+      .toUpperCase();
+  }
+
+  canvas.addEventListener('pointermove', e => {
+    if (!robot){ tooltip.classList.remove('on'); return; }
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    ndc.x = (x / rect.width)  * 2 - 1;
+    ndc.y = -(y / rect.height) * 2 + 1;
+    raycaster.setFromCamera(ndc, camera);
+    const hits = raycaster.intersectObject(robot, true);
+    const hit = hits.find(h => h.object.isMesh);
+    if (hit){
+      const linkName = findLinkName(hit.object);
+      if (linkName){
+        tooltip.textContent = prettyName(linkName);
+        tooltip.style.left = x + 'px';
+        tooltip.style.top  = y + 'px';
+        tooltip.classList.add('on');
+        hoverTarget = hit.object;
+        canvas.style.cursor = 'crosshair';
+        return;
+      }
+    }
+    tooltip.classList.remove('on');
+    hoverTarget = null;
+    canvas.style.cursor = '';
+  });
+
+  canvas.addEventListener('pointerleave', () => {
+    tooltip.classList.remove('on');
+    hoverTarget = null;
+    canvas.style.cursor = '';
   });
 
   const clock = new THREE.Clock();
